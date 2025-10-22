@@ -57,13 +57,17 @@ ollama pull nomic-embed-text
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/Little_MCP.git
+   wget https://github.com/ricard1406/Little_MCP/archive/refs/heads/main.zip
+   unzip main.zip
+   mv Little_MCP-main Little_MCP
    cd Little_MCP
    ```
 
 2. **Install dependencies**
    ```bash
-   pip install -r requirements.txt
+    python3 -m venv .venv
+    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+    pip install requests pydantic langchain langchain-community langchain-core chromadb pypdf fastapi uvicorn requests python-dotenv pytz timezonefinder geopy
    ```
 
 3. **Set up environment variables**
