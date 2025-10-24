@@ -14,13 +14,23 @@ ollama pull nomic-embed-text
    ```bash
     python3 -m venv .venv
     source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-    pip install requests pydantic langchain langchain-community langchain-core chromadb pypdf fastapi uvicorn requests python-dotenv pytz timezonefinder geopy
+    pip install requests pydantic langchain==0.0.354 langchain-community langchain-core chromadb pypdf fastapi uvicorn requests python-dotenv pytz timezonefinder geopy
    ```
 📦 Config your api_key
    ```bash
-   [your fav editor] .env
+   cd source
+   [if you want real time weather, open your fav editor and set your openweather key]
+   [vi] .env
    OPENWEATHER_API_KEY=your_api_key_here
-   ```
-   your local .data folder contains demo docs
 
+   Note: your local .data folder contains demo docs
+
+   ```
+📦 Start app
+   ```bash
+   python mcp_server.py
+
+   [leave open this terminal and open a second terminal please]
+   [activate your env if not jet] : source ../.venv/bin/activate]
+   python little_mcp.py
    ```
