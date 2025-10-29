@@ -22,29 +22,6 @@ A simple yet powerful local AI assistant that runs entirely on your machine. Bui
 - [Ollama](https://ollama.ai) installed and running locally
 - OpenWeather API key (free tier available at [openweathermap.org](https://openweathermap.org/api))
 
-### Python Dependencies
-
-**For MCP Server:**
-```
-fastapi
-uvicorn
-requests
-python-dotenv
-pytz
-timezonefinder
-geopy
-```
-
-**For MCP Client:**
-```
-requests
-pydantic
-langchain
-langchain-community
-langchain-core
-chromadb
-pypdf
-```
 
 ### Required Ollama Models
 Download these models before running the application:
@@ -67,23 +44,28 @@ ollama pull nomic-embed-text
    ```bash
     python3 -m venv .venv
     source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-    pip install requests pydantic langchain langchain-community langchain-core chromadb pypdf fastapi uvicorn requests python-dotenv pytz timezonefinder geopy
+    pip install requests pydantic langchain==0.0.354 langchain-community langchain-core chromadb pypdf fastapi uvicorn requests python-dotenv pytz timezonefinder geopy
    ```
 
 3. **Set up environment variables**
    
-   Create a `.env` file in the project root:
+   Edit `.env` file :
    ```bash
+   cd source
+   [if you want real time weather, open your fav editor and set your openweather key]
+   [vi] .env
    OPENWEATHER_API_KEY=your_api_key_here
+
+   Note: your local .data folder contains demo docs
    ```
    
    Get your free API key from [OpenWeatherMap](https://openweathermap.org/api)
 
 4. **Prepare your PDF document**
    
-   Create a `data` directory and place your PDF file:
+   COpen `data` directory and place your PDF file:
    ```bash
-   mkdir data
+   cd data
    # Copy your PDF to ./data/
    ```
 
@@ -121,6 +103,7 @@ The server provides the following endpoints:
 
 In a second terminal:
 ```bash
+[activate your env if not jet] : source ../.venv/bin/activate]
 python little_mcp.py
 ```
 
