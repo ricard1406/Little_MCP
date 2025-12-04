@@ -34,6 +34,6 @@ ollama pull nomic-embed-text
    python mcp_server.py
 
    [leave open this terminal and open a second terminal please]
-   [activate your env if not jet] : source ../.venv/bin/activate]
+   [activate your env if not jet] : source ../.venv/bin/activate   ]
    python little_mcp.py
    ```
