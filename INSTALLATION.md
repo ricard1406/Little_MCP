@@ -22,7 +22,7 @@ ollama pull nomic-embed-text
 📦 Config your api_key
    ```bash
    cd source
-   [if you want real time weather, open your fav editor and set your openweather key]
+   [if you want real time weather, open your fav editor and set your openweather key
    [vi] .env
    OPENWEATHER_API_KEY=your_api_key_here
 
