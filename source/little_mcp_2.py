@@ -234,6 +234,8 @@ def main():
         print(f"Version: {VERSION}")
         print("\n🎉 Your Assistant is Ready!")
         print("You can now ask general questions, ask for the weather, or ask about your PDF document.")
+        print("What's the weather and time in Sydney now ?")
+        print("is Dianne in our local list of Candidates ?")        
         print("Type 'quit' to exit.\n")
 
         while True:
