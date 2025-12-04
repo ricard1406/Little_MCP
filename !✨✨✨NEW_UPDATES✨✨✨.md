@@ -1,3 +1,7 @@
+## 📦 Coming soon : 
+-  Support for AI Agent tool for SQL Database
+-  MariaDB database tested on local
+
 ## 📦 Release 0.2
 ## supporting LangChain latest release.
 
