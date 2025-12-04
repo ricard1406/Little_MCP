@@ -17,7 +17,7 @@ ollama pull nomic-embed-text
     pip install requests pydantic langchain==0.0.354 langchain-community langchain-core chromadb pypdf fastapi uvicorn requests python-dotenv pytz timezonefinder geopy
 
     BUT if you get little_mcp_2.py version
-    pip install langchain-core langchain-community langchain-ollama langchain-text-splitters langgraph fastapi uvicorn requests python-dotenv pytz timezonefinder geopy
+    pip install langchain-core langchain-community langchain-ollama langchain-text-splitters langgraph fastapi uvicorn requests python-dotenv pytz timezonefinder geopy chromadb pypdf
    ```
 📦 Config your api_key
    ```bash
