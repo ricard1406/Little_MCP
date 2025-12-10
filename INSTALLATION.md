@@ -17,14 +17,16 @@ ollama pull nomic-embed-text
     pip install requests pydantic langchain==0.0.354 langchain-community langchain-core chromadb pypdf fastapi uvicorn requests python-dotenv pytz timezonefinder geopy
 
     BUT if you get little_mcp_2.py version
-    pip install langchain-core langchain-community langchain-ollama langchain-text-splitters langgraph fastapi uvicorn requests python-dotenv pytz timezonefinder geopy chromadb pypdf
+    pip install langchain-core langchain-community langchain-ollama langchain-text-splitters langgraph fastapi uvicorn requests python-dotenv pytz timezonefinder geopy chromadb pypdf mariadb
    ```
 📦 Config your api_key
    ```bash
+   [open your fav editor and set your openweather key, DB user and password]
    cd source
-   [if you want real time weather, open your fav editor and set your openweather key
    [vi] .env
    OPENWEATHER_API_KEY=your_api_key_here
+   DB_USER=your_db_user
+   DB_PASSWORD=your_db_password
 
    Note: your local .data folder contains demo docs
 
