@@ -4,7 +4,7 @@ Built for learning and experimentation, it combines the power of open-source LLM
 retrieval-augmented generation (RAG) to create an intelligent chatbot that can work with your
 personal documents and provide real-time information.
 """
-VERSION="0.1.01"
+VERSION="0.3.0" # SQL db support    
 
 import os
 import requests
@@ -15,6 +15,7 @@ from timezonefinder import TimezoneFinder
 from geopy.geocoders import Nominatim
 from dotenv import load_dotenv
 import uvicorn
+import mariadb
 
 # Load environment variables from .env file for the API key
 load_dotenv()
@@ -101,6 +102,134 @@ def get_Calc(l_operation: str):
     # Convert the numerical result back to a string
     return str(result)
 
+# - * - * - * - * - * - * - * - * - * - * - * - * - * - * - * - * - * - * - *
+def query_mariadb(query: str, db_config: dict) -> str:
+    """
+    Connects to a MariaDB database, executes a read-only query,
+    and returns the formatted result as a string.
+    Args:
+        query: The SQL SELECT query to execute.
+        db_config: A dictionary with connection details:
+                   {'user': 'your_user', 'password': 'your_password',
+                    'host': 'your_host', 'port': 3306, 'database': 'your_db'}
+    Returns:
+        A string containing the formatted query results, or an error message.
+    """
+    conn = None  # Initialize conn to None
+    try:
+        # Establish the database connection
+        conn = mariadb.connect(**db_config)
+        ###print("Connection successful.")
+
+        # Create a cursor object to interact with the database
+        cur = conn.cursor()
+
+        # Execute the provided query
+        cur.execute(query)
+
+        # Fetch all the rows from the query result
+        rows = cur.fetchall()
+
+        # Check if the query returned any results
+        if not rows:
+            return "Query executed successfully, but returned no results."
+
+        # Format the results into a single string
+        # Each row is a tuple, so we convert each item in the tuple to a string
+        # and join them with ", ". Then, we join all the rows with a newline.
+        formatted_results = "\n".join([", ".join(map(str, row)) for row in rows])
+
+        return formatted_results
+
+    except mariadb.Error as e:
+        # Handle potential database errors (e.g., connection failed, bad query)
+        print(f"Error connecting to or querying MariaDB: {e}")
+        return f"Error: {e}"
+
+    finally:
+        # Ensure the connection is always closed, even if errors occur
+        if conn:
+            conn.close()
+            print("Connection closed.")
+
+def Get_SQL(l_operation: str) -> str:
+    # Please Configure your database connection details.
+
+    db_user = os.getenv('DB_USER')
+    db_password = os.getenv('DB_PASSWORD')
+    db_connection_config = {
+        'user': db_user,
+        'password': db_password,
+        'host': '127.0.0.1',  # Or your MariaDB server IP/hostname
+        'port': 3306,  # Default MariaDB port
+        'database': 'MYSTORE'  # The database you want to query
+    }
+
+    sql_query = l_operation
+    print("\n--- Running Query ---")
+    response = query_mariadb(sql_query, db_connection_config)
+
+    return response
+
+# - * - * - * - * - * - * - * - * - * - * - * - * - * - * - * - * - * - * - *
+def execute_mariadb(statement: str, db_config: dict) -> str:
+    """
+    Connects to MariaDB, executes a data modification statement (INSERT, UPDATE, DELETE),
+    and commits the changes.
+
+    Args:
+        statement: The SQL statement to execute (e.g., UPDATE, INSERT).
+        db_config: A dictionary with connection details.
+
+    Returns:
+        A string confirming the number of rows affected, or an error message.
+    """
+    conn = None
+    try:
+        # Establish the database connection
+        conn = mariadb.connect(**db_config)
+        cur = conn.cursor()
+
+        # Execute the provided statement
+        cur.execute(statement)
+
+        # For statements that change data, you MUST commit the transaction
+        conn.commit()
+
+        # cur.rowcount gives you the number of rows affected by the statement
+        affected_rows = cur.rowcount
+
+        return f"Statement executed successfully."
+
+    except mariadb.Error as e:
+        # If an error occurs, it's good practice to roll back any changes
+        if conn:
+            conn.rollback()
+        print(f"Error executing statement in MariaDB: {e}")
+        return f"Error: {e}"
+
+    finally:
+        # Ensure the connection is always closed
+        if conn:
+            conn.close()
+            print("Connection closed.")
+
+def Update_SQL(statement: str) -> str:
+    """A wrapper function to easily execute UPDATE, INSERT, or DELETE statements."""
+    db_user = os.getenv('DB_USER')
+    db_password = os.getenv('DB_PASSWORD')
+    db_connection_config = {
+        'user': db_user,
+        'password': db_password,
+        'host': '127.0.0.1',
+        'port': 3306,
+        'database': 'MYSTORE'
+    }
+    ###print("\n--- Executing Statement ---")
+    response = execute_mariadb(statement, db_connection_config)
+
+    return response
+
 
 # --- API Endpoints ---
 
@@ -134,9 +263,22 @@ def api_get_weather(myParam: str = Query(..., description="The city to get the w
 
 @app.get("/get_calc")
 def api_get_calc(myParam: str = Query(..., description="The calc operation, e.g., 'ADD, 2, 3' 'SUB, 2, 3'")):
-    """API endpoint to get the current weather."""
+    """API endpoint to get the current calc."""
 
     result = get_Calc(myParam)
+    if "error" in result:
+        # Check for specific HTTP errors if possible from the original response
+        if "cod" in result and result["cod"] != 200:
+            raise HTTPException(status_code=int(result["cod"]), detail=result.get("message", "Calc API error"))
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
+
+
+@app.get("/get_SQL_response")
+def api_get_SQL_response(myParam: str = Query(..., description="Returns the result of SQL statement formatted as String")):
+    """API endpoint to get the current SQL statement."""
+
+    result = Get_SQL(myParam)
     if "error" in result:
         # Check for specific HTTP errors if possible from the original response
         if "cod" in result and result["cod"] != 200:
@@ -149,3 +291,4 @@ def api_get_calc(myParam: str = Query(..., description="The calc operation, e.g.
 if __name__ == "__main__":
     print("Starting MCP Server ...")
     uvicorn.run(app, host="127.0.0.1", port=8000)
+    
