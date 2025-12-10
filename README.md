@@ -31,54 +31,8 @@ ollama pull nomic-embed-text
 ```
 
 ## 📦 Installation
+   ## see Installation doc.
 
-1. **Clone the repository**
-   ```bash
-   wget https://github.com/ricard1406/Little_MCP/archive/refs/heads/main.zip
-   unzip main.zip
-   mv Little_MCP-main Little_MCP
-   cd Little_MCP
-   ```
-
-2. **Install dependencies**
-   ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-    pip install requests pydantic langchain==0.0.354 langchain-community langchain-core chromadb pypdf fastapi uvicorn requests python-dotenv pytz timezonefinder geopy
-    BUT if you get little_mcp_2.py version
-    pip install langchain-core langchain-community langchain-ollama langchain-text-splitters langgraph fastapi uvicorn requests python-dotenv pytz timezonefinder geopy
-   ```
-
-3. **Set up environment variables**
-   
-   Edit `.env` file :
-   ```bash
-   cd source
-   [if you want real time weather, open your fav editor and set your openweather key]
-   [vi] .env
-   OPENWEATHER_API_KEY=your_api_key_here
-
-   Note: your local .data folder contains demo docs
-   ```
-   
-   Get your free API key from [OpenWeatherMap](https://openweathermap.org/api)
-
-4. **Prepare your PDF document**
-   
-   COpen `data` directory and place your PDF file:
-   ```bash
-   cd data
-   # Copy your PDF to ./data/
-   ```
-
-5. **Configure the client application**
-   
-   Edit the constants in `little_mcp.py`:
-   ```python
-   SERVER_URL = "http://127.0.0.1:8000"
-   PDF_DOCUMENT_PATH = "./data/your-document.pdf"
-   LLM = "qwen3:1.7b"  # or any other Ollama model
-   ```
 
 ## 🚀 Usage
 
@@ -94,12 +48,6 @@ You should see:
 Starting MCP Server ...
 INFO:     Uvicorn running on http://127.0.0.1:8000
 ```
-
-The server provides the following endpoints:
-- `GET /` - Health check
-- `GET /get_datetime?myParam=<city>` - Get current date/time
-- `GET /get_weather?myParam=<city>` - Get weather information
-- `GET /get_calc?myParam=<operation>` - Perform calculations
 
 ### Step 2: Start the MCP Client
 
