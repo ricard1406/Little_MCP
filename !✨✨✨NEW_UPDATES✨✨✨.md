@@ -1,3 +1,7 @@
+## 📦 Coming soon: 
+##  Support for thinking mode
+##  Dual option thinking/ nothinking mode
+
 ## 📦 Release 0.3 
 ##  Support AI Agent tool for SQL Database
 ##  MariaDB database tested on local db
