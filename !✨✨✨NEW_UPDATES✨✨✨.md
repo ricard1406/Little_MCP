@@ -1,6 +1,7 @@
 ## 📦 Coming soon: 
 ##  Support for thinking mode
 ##  Dual option thinking/ nothinking mode
+##  Support for LLM ministral-3
 
 ## 📦 Release 0.3 
 ##  Support AI Agent tool for SQL Database
