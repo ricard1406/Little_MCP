@@ -9,6 +9,7 @@ A simple yet powerful local AI assistant that runs entirely on your machine. Bui
 - **MCP Server/Client Architecture**: Demonstrates Model Context Protocol implementation with FastAPI
 - **Multi-Tool Agent**: Access to multiple tools including:
   - Document Q&A system (RAG-based)
+  - local SQL database (Mariadb)
   - Real-time weather information (OpenWeather API)
   - Current date and time for any city
   - Arithmetic calculations
