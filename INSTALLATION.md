@@ -1,6 +1,6 @@
 📦 Download these models before running the application:
 ```bash
-ollama pull qwen3:1.7b
+ollama pull qwen3:4b
 ollama pull nomic-embed-text
 ```
 📦 Installation
