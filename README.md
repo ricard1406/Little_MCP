@@ -28,7 +28,7 @@ A simple yet powerful local AI assistant that runs entirely on your machine. Bui
 ### Required Ollama Models
 Download these models before running the application:
 ```bash
-ollama pull qwen3:1.7b
+ollama pull qwen3:4b
 ollama pull nomic-embed-text
 ```
 
