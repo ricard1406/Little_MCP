@@ -4,7 +4,7 @@ Built for learning and experimentation, it combines the power of open-source LLM
 retrieval-augmented generation (RAG) to create an intelligent chatbot that can work with your
 personal documents and provide real-time information.
 """
-VERSION = "0.4.0 thinking/nothinking"   
+VERSION = "0.3.0"  # SQL db support 
 
 
 import requests
@@ -39,10 +39,8 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 SERVER_URL = "http://127.0.0.1:8000"
 PDF_DOCUMENT_PATH = "./data/Candidates and Scores List - Test Data - compact.pdf"
 CHROMA_DB_PATH = "chroma_db_rag"
-LLM = "qwen3:4b"
-###LLM = "qwen3:1.7b"
+LLM = "qwen3:1.7b"
 ###LLM = "qwen3:4b-thinking"
-###LLM = "ministral-3:3b"
 
 
 
@@ -158,16 +156,13 @@ class FastMCPTool(BaseTool):
 # Main Client Application
 # =================================================================
 
-import sys  # <--- Don't forget to import this at the very top of your file!
-
 class FastMCPLangChainClient:
-    def __init__(self, pdf_path: str, show_thinking: bool = False, ollama_model: str = LLM ):
+    def __init__(self, pdf_path: str, ollama_model: str = LLM):
         self.ollama_model = ollama_model
         self.agent_executor = None
         self.chat_history = []
-        self.show_thinking = show_thinking  # Store the user's preference
 
-        print(f"Initializing RAG System (Thinking Mode: {'ON' if show_thinking else 'OFF'})...")
+        print("Initializing RAG System...")
         self.rag_system = RAGSystem(pdf_path=pdf_path, persist_directory=CHROMA_DB_PATH)
         print("RAG System ready.")
 
@@ -227,88 +222,46 @@ class FastMCPLangChainClient:
         print("Tools available: ", [tool.name for tool in langchain_tools])
 
     def chat(self, message: str) -> str:
-        """Send a message to the agent."""
+        """Send a message to the agent and get a response."""
         if not self.agent_executor:
             raise RuntimeError("Client not initialized. Call initialize() first.")
-        
         try:
             # Build messages list with history
-            messages = list(self.chat_history)
+            messages = []
+            for msg in self.chat_history:
+                messages.append(msg)
             messages.append({"role": "user", "content": message})
 
-            final_response = ""
+            # Invoke agent
+            result = self.agent_executor.invoke({"messages": messages})
 
-            # --- BRANCH 1: THINKING MODE (Stream) ---
-            if self.show_thinking:
-                print("\n" + "─" * 30 + " 🧠 THINKING PROCESS " + "─" * 30)
-                
-                for event in self.agent_executor.stream({"messages": messages}, stream_mode="values"):
-                    current_message = event["messages"][-1]
-                    
-                    if hasattr(current_message, 'tool_calls') and current_message.tool_calls:
-                        for tool in current_message.tool_calls:
-                            print(f"\n👉 Thought: I need to use tool '{tool['name']}'")
-                            print(f"   Args: {tool['args']}")
-
-                    elif current_message.type == 'tool':
-                        # Truncate output for readability
-                        content_preview = current_message.content[:200] + "..." if len(current_message.content) > 200 else current_message.content
-                        print(f"\n🔍 Observation ({current_message.name}):")
-                        print(f"   {content_preview}")
-
-                    elif current_message.type == 'ai' and not current_message.tool_calls:
-                        final_response = current_message.content
-
-                print("─" * 80 + "\n")
-
-            # --- BRANCH 2: SILENT MODE (Invoke) ---
-            else:
-                # This is the "Old Version" behavior
-                result = self.agent_executor.invoke({"messages": messages})
-                final_response = result["messages"][-1].content
+            # Extract response
+            response_content = result["messages"][-1].content
 
             # Update history
             self.chat_history.append({"role": "user", "content": message})
-            self.chat_history.append({"role": "assistant", "content": final_response})
+            self.chat_history.append({"role": "assistant", "content": response_content})
 
-            return final_response
-            
+            return response_content
         except Exception as e:
             return f"Error processing message: {str(e)}"
+
 
 def main():
     if not os.path.exists(PDF_DOCUMENT_PATH):
         print(f"Error: PDF file not found at '{PDF_DOCUMENT_PATH}'.")
+        print("Please update the 'PDF_DOCUMENT_PATH' variable in the script.")
         return
 
-    # --- Command Line Argument Logic ---
-    # Default is False (Silent) unless user asks for /think
-    show_thinking_mode = False 
-    
-    if len(sys.argv) > 1:
-        if "/think" in sys.argv:
-            show_thinking_mode = True
-        elif "/nothink" in sys.argv:
-            show_thinking_mode = False
-    
-    # Initialize Client with the flag
-    client = FastMCPLangChainClient(
-        pdf_path=PDF_DOCUMENT_PATH, 
-        ollama_model=LLM, 
-        show_thinking=show_thinking_mode
-    )
-
+    client = FastMCPLangChainClient(pdf_path=PDF_DOCUMENT_PATH, ollama_model=LLM)
     try:
         client.initialize()
         print(f"Version: {VERSION}")
-        print(f"LLM: {LLM}")
-        print(f"Mode: {'🧠 THINKING' if show_thinking_mode else '🤫 SILENT'}")
-        print("You can now ask general questions, example :")
+        print("\n Your Assistant is Ready!")
+        print("You can now ask general questions, ask for the weather, or ask about your PDF document.")
         print("What's the weather and time in Sydney now ?")
         print("Is Dianne in our local list of Candidates ?")
         print("Do we have orange in our warehouse ?")  
-        print("Type 'quit' to exit.\n")
-        print("\n🎉 Your Assistant is Ready!")
         print("Type 'quit' to exit.\n")
 
         while True:
@@ -321,13 +274,11 @@ def main():
 
             print("\nAssistant: ", end="", flush=True)
             response = client.chat(user_input)
-            
-            # In silent mode, we need to print the response manually here.
-            # In thinking mode, the response is returned but we also print it to be safe.
             print(response)
             print("-" * 50)
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print(f"An unexpected error occurred during execution: {e}")
+
 
 if __name__ == "__main__":
     main()
