@@ -34,5 +34,5 @@ ollama pull nomic-embed-text
 
    [leave open this terminal and open a second terminal please]
    [activate your env if not jet] : source ../.venv/bin/activate   ]
-   python little_mcp.py
+   python little_mcp.py [/think | /nothink]
    ```
