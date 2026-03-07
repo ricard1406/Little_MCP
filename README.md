@@ -5,6 +5,7 @@ A simple yet powerful local AI assistant that runs entirely on your machine. Bui
 ## ✨ Features
 
 - **Local LLM Integration**: Powered by Ollama for complete privacy and offline functionality
+- **Remote large LLM Claude**: Required API key
 - **RAG System**: Query and extract information from your PDF documents using vector embeddings
 - **MCP Server/Client Architecture**: Demonstrates Model Context Protocol implementation with FastAPI
 - **Dual option thinking/ nothinking mode**: show thinking process.
