@@ -57,7 +57,22 @@ INFO:     Uvicorn running on http://127.0.0.1:8000
 In a second terminal:
 ```bash
 [activate your env if not jet] : source ../.venv/bin/activate]
+
+# Local Ollama silent
 python little_mcp.py
+
+# Local Ollama thinking
+python little_mcp.py --think
+
+# Use Claude (API key required)
+python little_mcp.py --provider anthropic 
+
+# Use Claude with thinking mode
+python little_mcp.py --provider anthropic --think
+
+# Override Claude model
+python little_mcp.py --provider anthropic --model claude-opus-4-5 [/think]
+
 ```
 
 ### Step 3: Start Chatting!
