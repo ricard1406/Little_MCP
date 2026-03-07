@@ -3,15 +3,22 @@ Little MCP Agent is a simple yet powerful local AI assistant that runs entirely 
 Built for learning and experimentation, it combines the power of open-source LLMs with advanced
 retrieval-augmented generation (RAG) to create an intelligent chatbot that can work with your
 personal documents and provide real-time information.
+
+Now supports dual provider mode:
+  - Local Ollama LLM  (default, no API key needed)
+  - Anthropic Claude  (requires --api-key)
 """
-VERSION = "0.4.0 thinking/nothinking"   
+VERSION = "0.5.0 dual-provider"
 
 
 import requests
 import json
 import warnings
 import os
+import sys
+import argparse
 from typing import Type
+from dotenv import load_dotenv
 
 # --- Pydantic ---
 from pydantic import BaseModel, Field
@@ -22,7 +29,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
-# --- LangGraph for Agent (replaces old agents) ---
+# --- LangGraph for Agent ---
 from langgraph.prebuilt import create_react_agent
 
 # --- LangChain Community Imports (Loaders & Stores) ---
@@ -35,15 +42,59 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-# --- Constants ---
+load_dotenv()
+
+# =================================================================
+# CONSTANTS
+# =================================================================
+
 SERVER_URL = "http://127.0.0.1:8000"
 PDF_DOCUMENT_PATH = "./data/Candidates and Scores List - Test Data - compact.pdf"
 CHROMA_DB_PATH = "chroma_db_rag"
-LLM = "qwen3:4b"
-###LLM = "qwen3:1.7b"
-###LLM = "qwen3:4b-thinking"
-###LLM = "ministral-3:3b"
 
+# Default models
+DEFAULT_OLLAMA_MODEL   = "qwen3:4b"
+DEFAULT_CLAUDE_MODEL   = "claude-sonnet-4-5"   # great balance of speed & quality
+
+
+# =================================================================
+# LLM FACTORY  
+# =================================================================
+
+def get_llm(provider: str, api_key: str = None, model: str = None, temperature: float = 0.1):
+    """
+    Return a LangChain chat model based on the chosen provider.
+
+    Providers
+    ---------
+    "ollama"    — local Ollama (no key needed)
+    "anthropic" — Anthropic Claude (requires api_key)
+    """
+    if provider == "anthropic":
+        if not api_key:
+            raise ValueError(
+                "An Anthropic API key is required when using provider='anthropic'.\n"
+                "Pass it with --api-key sk-ant-..."
+            )
+        try:
+            from langchain_anthropic import ChatAnthropic
+        except ImportError:
+            raise ImportError(
+                "langchain-anthropic is not installed.\n"
+                "Run:  pip install langchain-anthropic"
+            )
+        resolved_model = model or DEFAULT_CLAUDE_MODEL
+        print(f"[LLM Factory] Using Anthropic Claude — model: {resolved_model}")
+        return ChatAnthropic(
+            model=resolved_model,
+            temperature=temperature,
+            api_key=api_key
+        )
+
+    else:  # default: ollama
+        resolved_model = model or DEFAULT_OLLAMA_MODEL
+        print(f"[LLM Factory] Using local Ollama — model: {resolved_model}")
+        return ChatOllama(model=resolved_model, temperature=temperature)
 
 
 # =================================================================
@@ -51,12 +102,13 @@ LLM = "qwen3:4b"
 # =================================================================
 
 class RAGSystem:
-    def __init__(self, pdf_path: str, persist_directory: str):
+    def __init__(self, pdf_path: str, persist_directory: str, llm):
         if not os.path.exists(pdf_path):
-            raise FileNotFoundError(f"The specified PDF file was not found at: {pdf_path}")
+            raise FileNotFoundError(f"PDF file not found at: {pdf_path}")
 
         self.pdf_path = pdf_path
         self.persist_directory = persist_directory
+        self.llm = llm                                      # ← injected, not hardcoded
         self.embedding_function = OllamaEmbeddings(model="nomic-embed-text")
         self.vector_store = self._prepare_vector_store()
         self.rag_chain = self._build_rag_chain()
@@ -84,7 +136,6 @@ class RAGSystem:
 
     def _build_rag_chain(self):
         retriever = self.vector_store.as_retriever(search_kwargs={'k': 3})
-        llm = ChatOllama(model=LLM, temperature=0.1)
 
         template = """
         You are an assistant for question-answering tasks.
@@ -97,15 +148,14 @@ class RAGSystem:
         prompt = ChatPromptTemplate.from_template(template)
 
         chain = (
-                {"context": retriever, "question": RunnablePassthrough()}
-                | prompt
-                | llm
-                | StrOutputParser()
+            {"context": retriever, "question": RunnablePassthrough()}
+            | prompt
+            | self.llm                                      # ← uses injected LLM
+            | StrOutputParser()
         )
         return chain
 
     def query(self, question: str) -> str:
-        """Queries the RAG chain and returns the answer."""
         print(f"\n[RAG System] Querying with: '{question}'")
         return self.rag_chain.invoke(question)
 
@@ -117,7 +167,7 @@ class RAGToolInput(BaseModel):
 class RAGTool(BaseTool):
     name: str = "document_qa_system"
     description: str = (
-        "Use this tool ONLY when you need to answer questions about the contents of the local document. "
+        "Use this tool ONLY when you need to answer questions about the contents of the local document."
     )
     args_schema: Type[BaseModel] = RAGToolInput
     rag_system: RAGSystem
@@ -126,12 +176,11 @@ class RAGTool(BaseTool):
         arbitrary_types_allowed = True
 
     def _run(self, query: str) -> str:
-        """Execute the RAG query."""
         return self.rag_system.query(query)
 
 
 # =================================================================
-# FastMCPTool
+# FastMCPTool 
 # =================================================================
 
 class FastMCPTool(BaseTool):
@@ -141,7 +190,6 @@ class FastMCPTool(BaseTool):
     function_name: str = Field()
 
     def _run(self, query: str) -> str:
-        """Execute the tool by making an HTTP GET request to the MCP server."""
         try:
             endpoint_url = f"{SERVER_URL}/{self.function_name}"
             params = {'myParam': query.strip()}
@@ -158,21 +206,40 @@ class FastMCPTool(BaseTool):
 # Main Client Application
 # =================================================================
 
-import sys  # <--- Don't forget to import this at the very top of your file!
-
 class FastMCPLangChainClient:
-    def __init__(self, pdf_path: str, show_thinking: bool = False, ollama_model: str = LLM ):
-        self.ollama_model = ollama_model
+    def __init__(
+        self,
+        pdf_path: str,
+        provider: str = "ollama",
+        api_key: str = None,
+        model: str = None,
+        show_thinking: bool = False,
+    ):
+        self.provider = provider
+        self.api_key = api_key
+        self.model = model
+        self.show_thinking = show_thinking
         self.agent_executor = None
         self.chat_history = []
-        self.show_thinking = show_thinking  # Store the user's preference
 
-        print(f"Initializing RAG System (Thinking Mode: {'ON' if show_thinking else 'OFF'})...")
-        self.rag_system = RAGSystem(pdf_path=pdf_path, persist_directory=CHROMA_DB_PATH)
+        # Build one shared LLM instance for both RAG and the agent
+        self.llm = get_llm(
+            provider=provider,
+            api_key=api_key,
+            model=model,
+            temperature=0.1
+        )
+
+        print(f"\nInitializing RAG System (Thinking Mode: {'ON' if show_thinking else 'OFF'})...")
+        self.rag_system = RAGSystem(
+            pdf_path=pdf_path,
+            persist_directory=CHROMA_DB_PATH,
+            llm=self.llm                                    # ← share the same LLM
+        )
         print("RAG System ready.")
 
     def initialize(self):
-        """Initialize the LangChain agent with both MCP tools and the new RAG tool."""
+        """Initialize the LangChain agent with MCP tools + RAG tool."""
         mcp_tools_config = [
             {
                 "name": "get_datetime",
@@ -192,11 +259,11 @@ class FastMCPLangChainClient:
             {
                 "name": "get_SQL_response",
                 "description": """Returns the result of SQL statement formatted as String.
-    Use this tool whenever the user asks for data from his warehouse .
+    Use this tool whenever the user asks for data from his warehouse.
     Format the required data as SQL statement.
     Allowed tables : FRUITS ; VEGGIE
     Allowed items : ITEM, QUANTITY
-    Look at the examples below.
+    Examples:
     SELECT ITEM, QUANTITY FROM FRUITS
     SELECT ITEM, QUANTITY FROM VEGGIE""",
                 "function_name": "get_SQL_response"
@@ -204,66 +271,59 @@ class FastMCPLangChainClient:
             {
                 "name": "put_SQL_insert",
                 "description": """Update some SQL table.
-    Use this tool whenever the user asks to update some data in his warehouse .
+    Use this tool whenever the user asks to update some data in his warehouse.
     Format the required update as SQL statement.
     Allowed tables : FRUITS ; VEGGIE
     Allowed items : QUANTITY
-    Look at the example below.
+    Example:
     UPDATE FRUITS SET QUANTITY=4 WHERE ITEM='ORANGE';""",
                 "function_name": "put_SQL_insert"
             }
         ]
+
         langchain_tools = [FastMCPTool(**config) for config in mcp_tools_config]
+        langchain_tools.append(RAGTool(rag_system=self.rag_system))
 
-        rag_tool = RAGTool(rag_system=self.rag_system)
-        langchain_tools.append(rag_tool)
-
-        llm = ChatOllama(model=self.ollama_model, temperature=0.1)
-
-        # Create agent using LangGraph
-        self.agent_executor = create_react_agent(llm, langchain_tools)
+        # Agent uses the same shared LLM
+        self.agent_executor = create_react_agent(self.llm, langchain_tools)
 
         print("\nFastMCP LangChain Client initialized successfully!")
-        print("Tools available: ", [tool.name for tool in langchain_tools])
+        print("Tools available:", [tool.name for tool in langchain_tools])
 
     def chat(self, message: str) -> str:
-        """Send a message to the agent."""
         if not self.agent_executor:
             raise RuntimeError("Client not initialized. Call initialize() first.")
-        
+
         try:
-            # Build messages list with history
             messages = list(self.chat_history)
             messages.append({"role": "user", "content": message})
 
             final_response = ""
 
-            # --- BRANCH 1: THINKING MODE (Stream) ---
+            # --- THINKING MODE (stream) ---
             if self.show_thinking:
-                print("\n" + "─" * 30 + " 🧠 THINKING PROCESS " + "─" * 30)
-                
+                print("\n" + "─" * 30 + " 易 THINKING PROCESS " + "─" * 30)
+
                 for event in self.agent_executor.stream({"messages": messages}, stream_mode="values"):
                     current_message = event["messages"][-1]
-                    
+
                     if hasattr(current_message, 'tool_calls') and current_message.tool_calls:
                         for tool in current_message.tool_calls:
-                            print(f"\n👉 Thought: I need to use tool '{tool['name']}'")
+                            print(f"\n Thought: I need to use tool '{tool['name']}'")
                             print(f"   Args: {tool['args']}")
 
                     elif current_message.type == 'tool':
-                        # Truncate output for readability
-                        content_preview = current_message.content[:200] + "..." if len(current_message.content) > 200 else current_message.content
-                        print(f"\n🔍 Observation ({current_message.name}):")
-                        print(f"   {content_preview}")
+                        preview = current_message.content[:200] + "..." if len(current_message.content) > 200 else current_message.content
+                        print(f"\n Observation ({current_message.name}):")
+                        print(f"   {preview}")
 
                     elif current_message.type == 'ai' and not current_message.tool_calls:
                         final_response = current_message.content
 
                 print("─" * 80 + "\n")
 
-            # --- BRANCH 2: SILENT MODE (Invoke) ---
+            # --- SILENT MODE (invoke) ---
             else:
-                # This is the "Old Version" behavior
                 result = self.agent_executor.invoke({"messages": messages})
                 final_response = result["messages"][-1].content
 
@@ -272,44 +332,94 @@ class FastMCPLangChainClient:
             self.chat_history.append({"role": "assistant", "content": final_response})
 
             return final_response
-            
+
         except Exception as e:
             return f"Error processing message: {str(e)}"
 
+
+# =================================================================
+# CLI Entry Point
+# =================================================================
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Little MCP Agent — dual provider (Ollama / Claude)",
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+
+    parser.add_argument(
+        "--provider",
+        choices=["ollama", "anthropic"],
+        default="ollama",
+        help=(
+            "LLM provider to use:\n"
+            "  ollama    — local Ollama model (default, no key needed)\n"
+            "  anthropic — Anthropic Claude   (requires --api-key)\n"
+        )
+    )
+    parser.add_argument(
+        "--api-key",
+        default=None,
+        help="API key for the chosen provider (or set ANTHROPIC_API_KEY env var)."
+    )
+    parser.add_argument(
+        "--model",
+        default=None,
+        help=(
+            f"Model name override.\n"
+            f"  Ollama default    : {DEFAULT_OLLAMA_MODEL}\n"
+            f"  Anthropic default : {DEFAULT_CLAUDE_MODEL}\n"
+        )
+    )
+    parser.add_argument(
+        "--think",
+        action="store_true",
+        default=False,
+        help="Show the agent's thinking / tool-use process (streaming mode)."
+    )
+
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
+
     if not os.path.exists(PDF_DOCUMENT_PATH):
         print(f"Error: PDF file not found at '{PDF_DOCUMENT_PATH}'.")
         return
 
-    # --- Command Line Argument Logic ---
-    # Default is False (Silent) unless user asks for /think
-    show_thinking_mode = False 
-    
-    if len(sys.argv) > 1:
-        if "/think" in sys.argv:
-            show_thinking_mode = True
-        elif "/nothink" in sys.argv:
-            show_thinking_mode = False
-    
-    # Initialize Client with the flag
+    # API key can also come from environment variable
+    api_key = args.api_key or os.environ.get("ANTHROPIC_API_KEY")
+
+    # Resolve display model name for the banner
+    if args.provider == "anthropic":
+        display_model = args.model or DEFAULT_CLAUDE_MODEL
+    else:
+        display_model = args.model or DEFAULT_OLLAMA_MODEL
+
     client = FastMCPLangChainClient(
-        pdf_path=PDF_DOCUMENT_PATH, 
-        ollama_model=LLM, 
-        show_thinking=show_thinking_mode
+        pdf_path=PDF_DOCUMENT_PATH,
+        provider=args.provider,
+        api_key=api_key,
+        model=args.model,
+        show_thinking=args.think,
     )
 
     try:
         client.initialize()
-        print(f"Version: {VERSION}")
-        print(f"LLM: {LLM}")
-        print(f"Mode: {'🧠 THINKING' if show_thinking_mode else '🤫 SILENT'}")
-        print("You can now ask general questions, example :")
-        print("What's the weather and time in Sydney now ?")
-        print("Is Dianne in our local list of Candidates ?")
-        print("Do we have orange in our warehouse ?")  
+
+        print(f"\n{'=' * 55}")
+        print(f"  Little MCP Agent  —  v{VERSION}")
+        print(f"  Provider : {args.provider.upper()}")
+        print(f"  Model    : {display_model}")
+        print(f"  Mode     : {'易 THINKING' if args.think else '狼 SILENT'}")
+        print(f"{'=' * 55}")
+        print("Example questions:")
+        print("  What's the weather and time in Sydney now?")
+        print("  Is Dianne in our local list of Candidates?")
+        print("  Do we have orange in our warehouse?")
         print("Type 'quit' to exit.\n")
-        print("\n🎉 Your Assistant is Ready!")
-        print("Type 'quit' to exit.\n")
+        print(" Your Assistant is Ready!\n")
 
         while True:
             user_input = input("You: ").strip()
@@ -321,13 +431,12 @@ def main():
 
             print("\nAssistant: ", end="", flush=True)
             response = client.chat(user_input)
-            
-            # In silent mode, we need to print the response manually here.
-            # In thinking mode, the response is returned but we also print it to be safe.
             print(response)
             print("-" * 50)
+
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+
 
 if __name__ == "__main__":
     main()
