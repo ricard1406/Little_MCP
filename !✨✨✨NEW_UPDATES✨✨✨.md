@@ -1,3 +1,8 @@
+## 📦 Release 0.5 
+##  Support for dual provider : 
+    a) local Ollama LLM
+    b) remote Claude LLM
+
 ## 📦 Release 0.4 
 ##  Support for thinking mode
 ##  Dual option thinking/ nothinking mode
