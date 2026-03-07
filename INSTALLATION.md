@@ -14,18 +14,20 @@ ollama pull nomic-embed-text
    ```bash
     python3 -m venv .venv
     source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-    pip install langchain-core langchain-community langchain-ollama langchain-text-splitters langgraph fastapi uvicorn requests python-dotenv pytz timezonefinder geopy chromadb pypdf mariadb
+    pip install langchain-core langchain-community langchain-ollama langchain-text-splitters langgraph fastapi uvicorn requests python-dotenv pytz timezonefinder geopy chromadb pypdf mariadb langchain-anthropic
    ```
 📦 Config your api_key
    ```bash
-   [open your fav editor and set your openweather key, DB user and password]
+   [open your fav editor and set your openweather key, DB user and password, claude api_key]
    cd source
    [vi] .env
    OPENWEATHER_API_KEY=your_api_key_here
    DB_USER=your_db_user
    DB_PASSWORD=your_db_password
+   ANTHROPIC_API_KEY=your_api_key_here
 
-   Note: your local .data folder contains demo docs
+   Note a): your local .data folder contains demo docs
+   Note b): key required just if you use it. otherwise not required
 
    ```
 📦 Start app
