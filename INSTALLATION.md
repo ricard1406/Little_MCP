@@ -12,9 +12,9 @@ ollama pull nomic-embed-text
    cd Little_MCP
    ```
    ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-    pip install langchain-core langchain-community langchain-ollama langchain-text-splitters langgraph fastapi uvicorn requests python-dotenv pytz timezonefinder geopy chromadb pypdf mariadb langchain-anthropic
+   python3 -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   pip install langchain-core langchain-community langchain-ollama langchain-text-splitters langgraph fastapi uvicorn requests python-dotenv pytz timezonefinder geopy chromadb pypdf mariadb langchain-anthropic
    ```
 📦 Config your api_key
    ```bash
@@ -36,5 +36,9 @@ ollama pull nomic-embed-text
 
    [leave open this terminal and open a second terminal please]
    [activate your env if not jet] : source ../.venv/bin/activate   ]
-   python little_mcp.py [/think | /nothink]
+
+   python little_mcp.py               (Ollama LLM)
+   python little_mcp.py --think       (Ollama LLM thinking mode)
+   python little_mcp.py --provider anthropic               (Claude LLM)
+   python little_mcp.py --provider anthropic --think       (Claude LLM thinking mode)                   
    ```
