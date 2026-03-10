@@ -6,6 +6,7 @@ A simple yet powerful local AI assistant that runs entirely on your machine. Bui
 
 - **Local LLM Integration**: Powered by Ollama for complete privacy and offline functionality
 - **Remote large LLM Claude**: Required API key
+- **💻 Interface Options**: Graphic web interface or classic text interface.
 - **RAG System**: Query and extract information from your PDF documents using vector embeddings
 - **MCP Server/Client Architecture**: Demonstrates Model Context Protocol implementation with FastAPI
 - **Dual option thinking/ nothinking mode**: show thinking process.
@@ -29,7 +30,7 @@ A simple yet powerful local AI assistant that runs entirely on your machine. Bui
 ### Required Ollama Models
 Download these models before running the application:
 ```bash
-ollama pull qwen3:4b
+ollama pull qwen3:4b      (not required when use Claude)
 ollama pull nomic-embed-text
 ```
 
@@ -59,20 +60,23 @@ In a second terminal:
 [activate your env if not jet] : source ../.venv/bin/activate]
 
 # Local Ollama silent
-python little_mcp.py
+python little_mcp.py [graph]
 
 # Local Ollama thinking
-python little_mcp.py --think
+python little_mcp.py --think [graph]
 
 # Use Claude (API key required)
-python little_mcp.py --provider anthropic 
+python little_mcp.py --provider anthropic [graph]
 
 # Use Claude with thinking mode
-python little_mcp.py --provider anthropic --think
+python little_mcp.py --provider anthropic --think [graph]
 
 # Override Claude model
-python little_mcp.py --provider anthropic --model claude-opus-4-5 [/think]
+python little_mcp.py --provider anthropic --model claude-opus-4-5 [--think]
 
+note: add graph parameter for graphical interface
+When use graph interface open your browser and run local URL:
+http://127.0.0.1:7860
 ```
 
 ### Step 3: Start Chatting!
