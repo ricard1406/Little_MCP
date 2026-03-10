@@ -1,3 +1,6 @@
+## 📦 Release 0.5.1 
+##  Support text / graph interface
+
 ## 📦 Release 0.5 
 ##  Support for dual provider : 
     a) local Ollama LLM
