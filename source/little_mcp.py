@@ -8,7 +8,7 @@ Now supports dual provider mode:
   - Local Ollama LLM  (default, no API key needed)
   - Anthropic Claude  (requires --api-key)
 """
-VERSION = "0.5.0 dual-provider"
+VERSION = "0.5.1 dual-provider - text/ graph option"
 
 
 import requests
@@ -39,6 +39,9 @@ from langchain_community.vectorstores import Chroma
 # --- Specific Integration Packages ---
 from langchain_ollama import ChatOllama, OllamaEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+import gradio as gr
+import datetime  
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -342,11 +345,16 @@ class FastMCPLangChainClient:
 # =================================================================
 
 def parse_args():
+    
     parser = argparse.ArgumentParser(
         description="Little MCP Agent — dual provider (Ollama / Claude)",
         formatter_class=argparse.RawTextHelpFormatter
     )
-
+    parser.add_argument(
+        "mode",
+        choices=["graph", "text"],
+        help="Interface mode:\n  graph — Gradio web UI\n  text  — terminal chat"
+    )
     parser.add_argument(
         "--provider",
         choices=["ollama", "anthropic"],
@@ -380,6 +388,12 @@ def parse_args():
 
     return parser.parse_args()
 
+def clean_agent_response(agent_output_string):
+    if "</think>" in agent_output_string:
+        clean_output = agent_output_string.split("</think>", 1)[1]
+    else:
+        clean_output = agent_output_string
+    return clean_output.strip()
 
 def main():
     args = parse_args()
@@ -421,19 +435,50 @@ def main():
         print("Type 'quit' to exit.\n")
         print(" Your Assistant is Ready!\n")
 
-        while True:
-            user_input = input("You: ").strip()
-            if user_input.lower() in ['quit', 'exit', 'bye']:
-                print("Goodbye!")
-                break
-            if not user_input:
-                continue
+        if args.mode == "graph":
+            # callback 
+            def chat_with_agent(message, history):
+                try:
+                    response = client.chat(message)
+                    return clean_agent_response(response)
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+                    return "Sorry, I encountered an error while processing your request."
 
-            print("\nAssistant: ", end="", flush=True)
-            response = client.chat(user_input)
-            print(response)
+            demo = gr.ChatInterface(
+                fn=chat_with_agent,
+                title="Little MCP Agent",
+                description="Chat with your AI agent. Supports weather, datetime, arithmetic, SQL warehouse queries, and local document search.",
+                examples=[
+                "What is the current date and time?",
+                "What is the weather in London, UK?",
+                "Calculate 15 * 3 + 7",
+                "Check if you find Dianne Bridgewater in our List of Candidates; if you find her write a document for her convocation in our main office, check the weather in her address if it's good the convocation date is in two days from current date, otherwise the convocation date is Monday of next week from current date",
+                "Do we have orange in our warehouse?",
+                "Please increase by 2 apples quantity in our warehouse"
+                ],
+                textbox=gr.Textbox(placeholder="Ask your agent a question...", scale=7),
+            )
+            demo.launch(share=False, debug=True)
+
+        elif args.mode == "text":
+            print("Type your question and press Enter. Type 'quit' or 'exit' to end.")
             print("-" * 50)
-
+            while True:
+                try:
+                    user_input = input("You: ").strip()
+                    if user_input.lower() in ['quit', 'exit', 'bye']:
+                        print("Goodbye!")
+                        break
+                    if not user_input:
+                        continue
+                    print("\nAssistant: ", end="", flush=True)
+                    response = client.chat(user_input)
+                    print(clean_agent_response(response))
+                    print("-" * 50)
+                except (KeyboardInterrupt, EOFError):
+                    print("\n\nExiting chat. Goodbye!")
+                    break
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
 
