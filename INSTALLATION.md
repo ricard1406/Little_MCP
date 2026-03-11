@@ -1,4 +1,5 @@
 📦 Download these models before running the application:
+   (not required when using Calude)
 ```bash
 ollama pull qwen3:4b
 ollama pull nomic-embed-text
