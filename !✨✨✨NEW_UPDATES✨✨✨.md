@@ -1,10 +1,10 @@
 ## 📦 Release 0.5.1 
-##  Support text / graph interface
+##  Support for text / graph interface option
 
 ## 📦 Release 0.5 
 ##  Support for dual provider : 
     a) local Ollama LLM
-    b) remote Claude LLM
+    b) remote Claude LLM (API key required)
 
 ## 📦 Release 0.4 
 ##  Support for thinking mode
