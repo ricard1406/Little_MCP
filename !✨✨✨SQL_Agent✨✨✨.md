@@ -102,8 +102,15 @@ echo 'DB_PASSWORD=your_maria_db_password' >> .env
 # IMPORTANT NOTE:
 # edit "mcp_server.py" and at the top uncomment this line:
 #import mariadb
----
 
+#----------------------------------------------#
+If get errors installing mariadb, maybe try:
+sudo apt install libmariadb-dev python3-dev build-essential pkg-config
+pip install wheel
+
+#----------------------------------------------#
+```
+```bash
 ## 🎯 Key Benefits
 
 - **Natural Language Processing** - Ask questions in plain English
