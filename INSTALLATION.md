@@ -1,4 +1,4 @@
-📦 Download Ollama local model : (not required when using Calude)
+📦 Download Ollama local model : (not required when using Claude)
 ```bash
 ollama pull qwen3:4b
 ```
