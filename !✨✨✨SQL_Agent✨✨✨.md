@@ -97,8 +97,11 @@ pip install mariadb
 # Add database credentials to environment file
 echo 'DB_USER=your_maria_db_user' >> .env
 echo 'DB_PASSWORD=your_maria_db_password' >> .env
-```
 
+#----------------------------------------------#
+# IMPORTANT NOTE:
+# edit "mcp_server.py" and at the top uncomment this line:
+#import mariadb
 ---
 
 ## 🎯 Key Benefits
