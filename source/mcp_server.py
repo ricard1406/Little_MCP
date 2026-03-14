@@ -4,7 +4,7 @@ Built for learning and experimentation, it combines the power of open-source LLM
 retrieval-augmented generation (RAG) to create an intelligent chatbot that can work with your
 personal documents and provide real-time information.
 """
-VERSION="0.3.0" # SQL db support    
+VERSION="0.3.1" # SQL db support    
 
 import os
 import requests
@@ -15,7 +15,10 @@ from timezonefinder import TimezoneFinder
 from geopy.geocoders import Nominatim
 from dotenv import load_dotenv
 import uvicorn
-import mariadb
+#----------------------------------------------#
+# IMPORTANT NOTE:
+# uncomment when use SQL mariadb function
+#import mariadb
 
 # Load environment variables from .env file for the API key
 load_dotenv()
