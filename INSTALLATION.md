@@ -1,11 +1,12 @@
-📦 Download these models before running the application:
-   (not required when using Calude)
+📦 Download Ollama local model : (not required when using Calude)
 ```bash
 ollama pull qwen3:4b
+```
+📦 Download Ollama embeddings:
+```bash
 ollama pull nomic-embed-text
 ```
 📦 Installation
-
    ```bash
    wget https://github.com/ricard1406/Little_MCP/archive/refs/heads/main.zip
    unzip main.zip
@@ -15,7 +16,7 @@ ollama pull nomic-embed-text
    ```bash
    python3 -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   pip install langchain-core langchain-community langchain-ollama langchain-text-splitters langgraph fastapi uvicorn requests python-dotenv pytz timezonefinder geopy chromadb pypdf gradio mariadb langchain-anthropic
+   pip install langchain-core langchain-community langchain-ollama langchain-text-splitters langgraph fastapi uvicorn requests python-dotenv pytz timezonefinder geopy chromadb pypdf gradio langchain-anthropic
    ```
 📦 Config your api_key
    ```bash
@@ -38,10 +39,10 @@ ollama pull nomic-embed-text
    [leave open this terminal and open a second terminal please]
    [activate your env if not jet] : source ../.venv/bin/activate   ]
 
-   python little_mcp.py [graph]              (Ollama LLM)
-   python little_mcp.py [graph] --think       (Ollama LLM thinking mode)
-   python little_mcp.py [graph] --provider anthropic               (Claude LLM)
-   python little_mcp.py [graph] --provider anthropic --think       (Claude LLM thinking mode)
+   python little_mcp.py [text/graph]              (Ollama LLM)
+   python little_mcp.py [text/graph] --think       (Ollama LLM thinking mode)
+   python little_mcp.py [text/graph] --provider anthropic               (Claude LLM)
+   python little_mcp.py [text/graph] --provider anthropic --think       (Claude LLM thinking mode)
 
    note: add graph parameter for graphical interface
    When use graph interface open your browser and run local URL:
