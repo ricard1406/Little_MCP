@@ -20,8 +20,10 @@ ollama pull nomic-embed-text
    ```
 📦 Config your api_key
    ```bash
-   [open your fav editor and set your openweather key, DB user and password, claude api_key]
    cd source
+   ```
+   ```bash
+   [open your fav editor and set your openweather key, DB user and password, claude api_key]
    [vi] .env
    OPENWEATHER_API_KEY=your_api_key_here
    DB_USER=your_db_user
