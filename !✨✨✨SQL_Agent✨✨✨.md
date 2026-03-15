@@ -97,14 +97,16 @@ pip install mariadb
 # Add database credentials to environment file
 echo 'DB_USER=your_maria_db_user' >> .env
 echo 'DB_PASSWORD=your_maria_db_password' >> .env
+```
+### IMPORTANT NOTE:
+```bash
+edit "mcp_server.py" and at the top of file uncomment this line:
 
-#----------------------------------------------#
-# IMPORTANT NOTE:
-# edit "mcp_server.py" and at the top uncomment this line:
 #import mariadb
-
+```
+```bash
 #----------------------------------------------#
-If get errors installing mariadb, maybe try:
+If you get errors installing mariadb, maybe try:
 sudo apt install libmariadb-dev python3-dev build-essential pkg-config
 pip install wheel
 
