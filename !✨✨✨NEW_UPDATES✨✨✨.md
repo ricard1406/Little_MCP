@@ -1,3 +1,5 @@
+## 📦 Release 0.5.2
+#### 📦 Fixed mcp_server.py due to issues in SQL Update function.
 #### 📦 Updated Installation and SQL_agent documents due to eventually issues installing mariadb module.
 
 ## 📦 Release 0.5.1 
