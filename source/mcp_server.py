@@ -4,7 +4,7 @@ Built for learning and experimentation, it combines the power of open-source LLM
 retrieval-augmented generation (RAG) to create an intelligent chatbot that can work with your
 personal documents and provide real-time information.
 """
-VERSION="0.3.1" # SQL db support    
+VERSION="0.5.2" # SQL db support    
 
 import os
 import requests
@@ -202,7 +202,9 @@ def execute_mariadb(statement: str, db_config: dict) -> str:
         # cur.rowcount gives you the number of rows affected by the statement
         affected_rows = cur.rowcount
 
-        return f"Statement executed successfully."
+        # Grab the first word of the statement (e.g., "INSERT", "UPDATE") for better context
+        operation_type = statement.strip().split()[0].upper()
+        return f"{operation_type} executed."
 
     except mariadb.Error as e:
         # If an error occurs, it's good practice to roll back any changes
@@ -289,6 +291,18 @@ def api_get_SQL_response(myParam: str = Query(..., description="Returns the resu
         raise HTTPException(status_code=500, detail=result["error"])
     return result
 
+
+@app.get("/put_SQL_insert")
+def api_get_SQL_response(myParam: str = Query(..., description="Update some SQL table")):
+    """API endpoint to get the current SQL statement."""
+
+    result = Update_SQL(myParam)
+    if "error" in result:
+        # Check for specific HTTP errors if possible from the original response
+        if "cod" in result and result["cod"] != 200:
+            raise HTTPException(status_code=int(result["cod"]), detail=result.get("message", "Calc API error"))
+        raise HTTPException(status_code=500, detail=result["error"])
+    return result
 
 # --- Main entry point to run the server ---
 if __name__ == "__main__":
